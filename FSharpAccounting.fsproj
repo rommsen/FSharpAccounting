@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net461</TargetFramework>
+    <DebugType>portable</DebugType>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Domain.fs" />
+    <Compile Include="Operations.fs" />
+    <Compile Include="FileRepository.fs" />
+    <Compile Include="Auditing.fs" />
+    <Compile Include="Program.fs" />
+    <!-- <None Include="App.config" /> -->
+    <None Include="Scratchpad.fsx" />
+  </ItemGroup>
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
+</Project>
