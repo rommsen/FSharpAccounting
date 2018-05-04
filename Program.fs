@@ -6,42 +6,44 @@ open FSharpAccounting.Operations
 open FSharpAccounting.FileRepository
 
 let withdrawWithAudit =
-  auditAs "withdraw" Auditing.composedLogger withdraw
+  auditAs Withdraw Auditing.composedLogger withdraw
 
 let depositWithAudit =
-  auditAs "deposit" Auditing.composedLogger deposit
+  auditAs Deposit Auditing.composedLogger deposit
 
-let isValidCommand command =
+let tryParseCommand command =
   match command with
-  | 'd' | 'w' | 'x' -> true
-  | _ -> false
+  | 'd' -> Deposit |> Some
+  | 'w' -> Withdraw |> Some
+  | 'x' -> Exit |> Some
+  | _ -> None
 
 let isStopCommand command =
-  command = 'x'
+  command = Exit
 
 let getAmount command =
-  Console.WriteLine "\nAmount: "
+  Console.Write "\nAmount: "
   let amount = Console.ReadLine() |> Decimal.Parse
 
   command,amount
 
-let processCommand account (command:char, amount: decimal) =
+let processCommand account (command, amount: decimal) =
   match command with
-  | 'd' ->
+  | Deposit ->
     account |> depositWithAudit amount
 
-  | 'w' ->
+  | Withdraw ->
     account |> withdrawWithAudit amount
 
-  | _ ->
+  | Exit ->
     account
 
 let replay account transaction =
   match transaction.Operation with
-  | "deposit" ->
+  | Deposit ->
       account |> deposit transaction.Amount
 
-  | "withdraw" ->
+  | Withdraw ->
       account |> withdraw transaction.Amount
 
   | _ -> account
@@ -55,6 +57,8 @@ let loadAccount (owner,accountId,transactions) =
 
 [<EntryPoint>]
 let main _ =
+  Console.Clear()
+
   let name =
     Console.Write "Please enter your name: "
     Console.ReadLine()
@@ -64,16 +68,18 @@ let main _ =
     |> findTransactionsOnDisk
     |> loadAccount
 
+  printf "\r\nOpening Account %A\r\n" openingAccount
+
   let consoleCommands =
     seq {
       while true do
-        Console.Write "(d)eposit, (w)ithdraw or e(x)it: "
+        Console.Write "\r\n(d)eposit, (w)ithdraw or e(x)it: "
         yield Console.ReadKey().KeyChar
     }
 
   let closingAccount =
     consoleCommands
-    |> Seq.filter isValidCommand
+    |> Seq.choose tryParseCommand
     |> Seq.takeWhile (not << isStopCommand)
     |> Seq.map getAmount
     |> Seq.fold processCommand openingAccount

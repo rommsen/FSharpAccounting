@@ -5,6 +5,9 @@ open FSharpAccounting.Operations
 open FSharpAccounting.Domain
 open System
 
+
+printfn "%A" Withdraw
+
 let openingAccount =
   {
     Owner = { Name = "Roman" }
@@ -41,19 +44,23 @@ let account =
   |> Seq.fold processCommand openingAccount
 
 
-let replay account transaction =
-  match transaction.Operation with
-  | "deposit" ->
-      account |> deposit transaction.Amount
 
-  | "withdraw" ->
-      account |> withdraw transaction.Amount
 
-  | _ -> account
+for number in 1 .. 10 do
+    printfn "%d Hello!" number
 
-let loadAccount owner accountId transactions =
- let account = Account.init accountId owner
+for number in 10 .. -1 .. 1 do
+    printfn "%d Hello!" number
 
- transactions
- |> Seq.sortBy (fun tx -> tx.Timestamp)
- |> Seq.fold replay account
+let customerIds = [ 45 .. 99 ]
+for customerId in customerIds do
+    printfn "%d bought something!" customerId
+
+for even in 2 .. 2 .. 10 do
+    printfn "%d is an even number!" even
+
+open System
+
+let arrayOfChars = [| for c in 'a' .. 'z' -> Char.ToUpper c |]
+let listOfSquares = [ for i in 1 .. 10 -> i * i ]
+let seqOfStrings = seq { for i in 2 .. 4 .. 20 -> sprintf "Number %d" i }
