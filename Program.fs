@@ -13,8 +13,8 @@ let depositWithAudit =
 
 let tryParseCommand command =
   match command with
-  | 'd' -> Deposit |> Some
-  | 'w' -> Withdraw |> Some
+  | 'd' -> Deposit |> BankOperation |> Some
+  | 'w' -> Withdraw |> BankOperation |> Some
   | 'x' -> Exit |> Some
   | _ -> None
 
@@ -35,8 +35,10 @@ let processCommand account (command, amount: decimal) =
   | Withdraw ->
     account |> withdrawWithAudit amount
 
-  | Exit ->
-    account
+let tryGetBankOperation cmd =
+  match cmd with
+  | Exit -> None
+  | BankOperation op -> Some op
 
 let replay account transaction =
   match transaction.Operation with
@@ -81,6 +83,7 @@ let main _ =
     consoleCommands
     |> Seq.choose tryParseCommand
     |> Seq.takeWhile (not << isStopCommand)
+    |> Seq.choose tryGetBankOperation
     |> Seq.map getAmount
     |> Seq.fold processCommand openingAccount
 

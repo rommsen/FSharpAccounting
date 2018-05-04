@@ -8,15 +8,18 @@ type Customer =
 type Account =
   { AccountId : Guid; Owner : Customer; Balance : decimal }
 
-type Command =
+type BankOperation =
   | Withdraw
   | Deposit
+
+type Command =
+  | BankOperation of BankOperation
   | Exit
 
 type Transaction =
   {
     Timestamp : DateTime
-    Operation : Command
+    Operation : BankOperation
     Amount : decimal
     Accepted : bool
   }
