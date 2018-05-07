@@ -23,9 +23,9 @@ let isStopCommand command =
 
 let getAmount command =
   Console.Write "\nAmount: "
-  let amount = Console.ReadLine() |> Decimal.Parse
-
-  command,amount
+  match Console.ReadLine() |> Decimal.TryParse with
+  | true, amount -> Some (command,amount)
+  | false, _ -> None
 
 let processCommand account (command, amount: decimal) =
   match command with
@@ -57,18 +57,25 @@ let loadAccount (owner,accountId,transactions) =
   |> Seq.sortBy (fun tx -> tx.Timestamp)
   |> Seq.fold replay account
 
+let tryLoadAccountFromDisk =
+  tryFindTransactionsOnDisk >> Option.map loadAccount
+
 [<EntryPoint>]
 let main _ =
   Console.Clear()
 
-  let name =
-    Console.Write "Please enter your name: "
-    Console.ReadLine()
-
   let openingAccount =
-    name
-    |> findTransactionsOnDisk
-    |> loadAccount
+    Console.Write "Please enter your name: "
+    let owner = Console.ReadLine()
+
+    match (tryLoadAccountFromDisk owner) with
+    | Some account -> account
+    | None ->
+        {
+          Balance = 0M
+          AccountId = Guid.NewGuid()
+          Owner = { Name = owner }
+        }
 
   printf "\r\nOpening Account %A\r\n" openingAccount
 
@@ -84,7 +91,7 @@ let main _ =
     |> Seq.choose tryParseCommand
     |> Seq.takeWhile (not << isStopCommand)
     |> Seq.choose tryGetBankOperation
-    |> Seq.map getAmount
+    |> Seq.choose getAmount
     |> Seq.fold processCommand openingAccount
 
   Console.Clear()

@@ -9,17 +9,21 @@ let private accountsPath =
   Directory.CreateDirectory path |> ignore
   path
 
-let private findAccountFolder owner =
-  let folders = Directory.EnumerateDirectories(accountsPath, sprintf "%s_*" owner)
-  if Seq.isEmpty folders then
-    ""
-  else
-    let folder = Seq.head folders
-    DirectoryInfo(folder).Name
+let private tryFindAccountFolder owner =
+  let folders =
+    Directory.EnumerateDirectories(accountsPath, sprintf "%s_*" owner)
+    |> Seq.toList
 
-let private buildPath(owner, accountId:Guid) = 
+  match folders with
+  | [] ->
+      None
+
+  | folder :: _ ->
+      Some <| DirectoryInfo(folder).Name
+
+
+let private buildPath(owner, accountId:Guid) =
   sprintf @"%s\%s_%O" accountsPath owner accountId
-
 
 let loadTransactions (folder:string) =
   let owner, accountId =
@@ -40,7 +44,7 @@ let writeTransaction accountId owner transaction =
   File.WriteAllText(filePath, transaction |> Transaction.serialize)
 
 /// Finds all transactions from disk for specific owner.
-let findTransactionsOnDisk owner =
-  let folder = findAccountFolder owner
-  if String.IsNullOrEmpty folder then owner, Guid.NewGuid(), Seq.empty
-  else loadTransactions folder
+let tryFindTransactionsOnDisk owner =
+  match tryFindAccountFolder owner with
+  | None -> None
+  | Some folder -> loadTransactions folder |> Some
