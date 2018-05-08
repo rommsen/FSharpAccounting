@@ -16,6 +16,13 @@ type Command =
   | BankOperation of BankOperation
   | Exit
 
+type CreditAccount =
+  CreditAccount of Account
+
+type RatedAccount =
+  | InCredit of CreditAccount
+  | Overdrawn of Account
+
 type Transaction =
   {
     Timestamp : DateTime

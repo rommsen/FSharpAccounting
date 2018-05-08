@@ -5,11 +5,11 @@ open FSharpAccounting.Domain
 open FSharpAccounting.Operations
 open FSharpAccounting.FileRepository
 
-let withdrawWithAudit =
-  auditAs Withdraw Auditing.composedLogger withdraw
+let withdrawWithAudit amount account =
+  auditAs Withdraw Auditing.composedLogger withdrawSafe amount account
 
-let depositWithAudit =
-  auditAs Deposit Auditing.composedLogger deposit
+let depositWithAudit amount account =
+  auditAs Deposit Auditing.composedLogger deposit amount account
 
 let tryParseCommand command =
   match command with
@@ -46,12 +46,14 @@ let replay account transaction =
       account |> deposit transaction.Amount
 
   | Withdraw ->
-      account |> withdraw transaction.Amount
+      account |> withdrawSafe transaction.Amount
 
   | _ -> account
 
 let loadAccount (owner,accountId,transactions) =
-  let account = Account.init accountId owner
+  let account =
+    Account.init accountId owner
+    |> classifyAccount
 
   transactions
   |> Seq.sortBy (fun tx -> tx.Timestamp)
@@ -69,13 +71,17 @@ let main _ =
     let owner = Console.ReadLine()
 
     match (tryLoadAccountFromDisk owner) with
-    | Some account -> account
+    | Some account ->
+        account
+
     | None ->
         {
           Balance = 0M
           AccountId = Guid.NewGuid()
           Owner = { Name = owner }
         }
+        |> CreditAccount
+        |> InCredit
 
   printf "\r\nOpening Account %A\r\n" openingAccount
 

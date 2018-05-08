@@ -4,20 +4,52 @@ open System
 open FSharpAccounting.Domain
 
 /// Withdraws an amount of an account (if there are sufficient funds)
-let withdraw amount account =
-  if amount > account.Balance then
+let classifyAccount account =
+  if account.Balance >= 0M then
     account
+    |> CreditAccount
+    |> InCredit
   else
-    { account with Balance = account.Balance - amount }
+    Overdrawn account
 
-/// Deposits an amount into an account
+let withdraw amount (CreditAccount account) =
+  { account with Balance = account.Balance - amount }
+  |> classifyAccount
+
+let withdrawSafe amount ratedAccount =
+  match ratedAccount with
+  | InCredit account ->
+      account |> withdraw amount
+
+  | Overdrawn _ ->
+      printfn "Your account is overdrawn - withdrawal rejected!"
+      ratedAccount // return input back out
+
 let deposit amount account =
+  let account =
+    match account with
+    | InCredit (CreditAccount account) ->
+        account
+
+    | Overdrawn account ->
+        account
+
   { account with Balance = account.Balance + amount }
+  |> classifyAccount
+
 
 /// Runs some account operation such as withdraw or deposit with auditing.
 let auditAs operationName audit operation amount account =
+  let unpacked =
+    match account with
+    | InCredit (CreditAccount account) ->
+        account
+
+    | Overdrawn account ->
+        account
+
   let updatedAccount =
-    operation amount account
+     operation amount account
 
   let transaction =
     {
@@ -27,6 +59,6 @@ let auditAs operationName audit operation amount account =
       Accepted = updatedAccount <> account
     }
 
-  audit account.AccountId account.Owner.Name transaction
+  audit unpacked.AccountId unpacked.Owner.Name transaction
 
   updatedAccount
