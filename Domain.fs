@@ -49,15 +49,27 @@ module Transaction =
 
   let tryParseCommand command =
     match command with
-    | "Withdraw" -> Withdraw
-    | "Deposit" -> Deposit
-    | _ -> failwith "Command not known in deserialization"
+    | "Withdraw" ->
+        Some Withdraw
 
-  let deserialize (serialized:string) =
+    | "Deposit" ->
+        Some Deposit
+
+    | _ ->
+        None
+
+  let tryDeserialize (serialized:string) =
     let parts = serialized.Split([|"***"|], StringSplitOptions.None)
-    {
-      Timestamp = DateTime.Parse parts.[0]
-      Operation = parts.[1] |> tryParseCommand
-      Amount = Decimal.Parse parts.[2]
-      Accepted = Boolean.Parse parts.[3]
-    }
+
+    match parts.[1] |> tryParseCommand with
+    | Some operation ->
+        {
+          Timestamp = DateTime.Parse parts.[0]
+          Operation = operation
+          Amount = Decimal.Parse parts.[2]
+          Accepted = Boolean.Parse parts.[3]
+        } |> Some
+
+    | None ->
+        None
+

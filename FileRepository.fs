@@ -34,7 +34,7 @@ let loadTransactions (folder:string) =
   accountId,
   buildPath(owner, accountId)
     |> Directory.EnumerateFiles
-    |> Seq.map (File.ReadAllText >> Transaction.deserialize)
+    |> Seq.map (File.ReadAllText >> Transaction.tryDeserialize)
 
 /// Logs to the file system
 let writeTransaction accountId owner transaction =

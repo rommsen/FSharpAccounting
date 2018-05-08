@@ -41,14 +41,15 @@ let tryGetBankOperation cmd =
   | BankOperation op -> Some op
 
 let replay account transaction =
-  match transaction.Operation with
-  | Deposit ->
+  match transaction.Operation, account with
+  | Deposit, _ ->
       account |> deposit transaction.Amount
 
-  | Withdraw ->
-      account |> withdrawSafe transaction.Amount
+  | Withdraw, InCredit account ->
+      account |> withdraw transaction.Amount
 
-  | _ -> account
+  | Withdraw, Overdrawn _ ->
+      account
 
 let loadAccount (owner,accountId,transactions) =
   let account =
@@ -56,6 +57,7 @@ let loadAccount (owner,accountId,transactions) =
     |> classifyAccount
 
   transactions
+  |> Seq.choose id
   |> Seq.sortBy (fun tx -> tx.Timestamp)
   |> Seq.fold replay account
 
